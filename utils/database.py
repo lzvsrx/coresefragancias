@@ -203,18 +203,18 @@ def delete_produto(product_id):
     conn.close()
 
 def mark_produto_as_sold(product_id, quantity_sold=1):
-    """Atualiza a quantidade e registra a última venda."""
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 1. Verifica se há estoque
     produto = get_produto_by_id(product_id)
     if not produto or produto.get('quantidade', 0) < quantity_sold:
-        raise ValueError("Estoque insuficiente para esta venda.")
+        # Se o estoque for 0, ele avisa em vez de "sumir"
+        raise ValueError("Estoque insuficiente!")
     
-    # 2. Atualiza
+    # Aqui removemos o 'vendido = 1' se você quiser que ele continue 
+    # aparecendo na lista normal mesmo após vendido
     cursor.execute(
-        "UPDATE produtos SET quantidade = quantidade - ?, vendido = 1, data_ultima_venda = ? WHERE id = ?",
+        "UPDATE produtos SET quantidade = quantidade - ?, data_ultima_venda = ? WHERE id = ?",
         (quantity_sold, datetime.now().isoformat(), product_id)
     )
     conn.commit()
