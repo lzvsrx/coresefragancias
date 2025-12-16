@@ -26,7 +26,7 @@ def load_css(file_name="style.css"):
 load_css()
 
 # --- Conteúdo da Página Inicial ---
-st.title("🌸 Cores e Fragrâncias by Berenice 🌸")
+st.title("🌸 Cores e Fragrancias by Berenice 🌸")
 st.markdown("---")
 
 st.markdown("""
