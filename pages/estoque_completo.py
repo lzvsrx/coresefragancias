@@ -37,7 +37,7 @@ st.set_page_config(page_title="Estoque - Cores e Fragrâncias")
 st.title("📦 Estoque Completo")
 
 # 🔄 CHAMADA CRÍTICA: Obter dados mais recentes
-produtos = get_all_produtos()
+produtos = get_all_produtos(include_sold=True)
 
 if not produtos:
     st.info("Nenhum produto cadastrado no estoque.")
@@ -114,3 +114,4 @@ else:
 
     # Exibição do Valor Total em Estoque (filtrado) - AGORA COM FORMATO BRL CORRETO
     st.success(f"💰 Valor Total em Estoque (filtrado): **{format_to_brl(total_estoque)}**")
+
