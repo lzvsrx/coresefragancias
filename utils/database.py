@@ -136,13 +136,17 @@ def add_produto(nome, preco, quantidade, marca, estilo, tipo, foto=None, data_va
     conn.close()
 
 def get_all_produtos(include_sold=True):
-    """Retorna todos os produtos. Se include_sold=False, retorna apenas itens com quantidade > 0."""
+    """Retorna todos os produtos cadastrados."""
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Se você quer ver TUDO sempre:
+    cursor.execute("SELECT * FROM produtos ORDER BY nome ASC")
+    
     if include_sold:
-        cursor.execute("SELECT * FROM produtos ORDER BY nome ASC")
+         cursor.execute("SELECT * FROM produtos ORDER BY nome ASC")
     else:
-        cursor.execute("SELECT * FROM produtos WHERE quantidade > 0 ORDER BY nome ASC")
+         cursor.execute("SELECT * FROM produtos WHERE quantidade > 0 ORDER BY nome ASC")
         
     produtos = [dict(row) for row in cursor.fetchall()]
     conn.close()
