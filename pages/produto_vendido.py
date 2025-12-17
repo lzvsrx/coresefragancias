@@ -1,5 +1,4 @@
-produtos_vendidos.py - COMPLETO SEM ERROS
-python
+
 import streamlit as st
 import os
 from datetime import datetime
@@ -163,3 +162,4 @@ with col_total2:
     st.info(f"📊 **{total_itens} itens** | **{len(todos_produtos)} total** no sistema")
 
 st.caption(f"*Atualizado: {datetime.now().strftime('%d/%m/%Y %H:%M')}*")
+
