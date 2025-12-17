@@ -1,19 +1,23 @@
 import streamlit as st
 from utils.database import get_all_produtos
-from datetime import datetime
+import os
 
-st.title("💰 Relatório de Itens Vendidos (Esgotados)")
+def load_css(file_name="style.css"):
+    if os.path.exists(file_name):
+        with open(file_name, encoding='utf-8') as f: 
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-# Filtra itens que foram marcados como vendidos e estão com zero estoque
+load_css()
+
+st.title("💰 Produtos Vendidos (Zerados)")
+
+# Filtra apenas o que está zerado mas já foi vendido no passado
 vendidos = [p for p in get_all_produtos(include_sold=True) if p['quantidade'] <= 0 and p['vendido'] == 1]
 
 if not vendidos:
-    st.info("Nenhum item totalmente vendido até o momento.")
+    st.info("Nenhum item vendido no histórico.")
 else:
-    total_vendas = sum(p['preco'] for p in vendidos)
-    st.metric("Total em Vendas de Itens Esgotados", f"R$ {total_vendas:,.2f}")
-    
     for p in vendidos:
-        st.write(f"**Produto:** {p['nome']} | **Marca:** {p['marca']}")
-        st.write(f"**Data da Venda:** {p['data_ultima_venda'] or 'N/A'}")
+        st.write(f"### {p['nome']}")
+        st.write(f"Vendido em: {p['data_ultima_venda'] or 'Data não registrada'}")
         st.divider()
