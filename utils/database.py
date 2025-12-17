@@ -1,8 +1,4 @@
-Códigos Completos Corrigidos
-Aqui estão os três arquivos completos e corrigidos para resolver o problema dos produtos que somem e garantir capacidade infinita.
 
-database.py (Completo - Correções Aplicadas)
-python
 # ====================================================================
 # ARQUIVO: utils/database.py
 # Contém as funções de DB (SQLite), Hash, CRUD, Login e Exportação.
