@@ -1,7 +1,4 @@
-Esse código já está bem estruturado; abaixo vai a versão revisada com tratamento de erros mais robusto, compatibilidade com seu database.py e proteção contra quebras comuns (chaves ausentes, tipos errados, erro de import, etc.).
 
-Código atualizado com tratamentos de erro
-python
 import streamlit as st
 import os
 from datetime import datetime
