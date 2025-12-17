@@ -1,5 +1,4 @@
-estoque_completo.py - COMPLETO E SEM ERROS
-python
+
 import streamlit as st
 from utils.database import get_all_produtos, ASSETS_DIR, MARCAS, ESTILOS, TIPOS
 from datetime import datetime
@@ -189,3 +188,4 @@ with col_total3:
 
 st.markdown("---")
 st.markdown("*Desenvolvido para Cores e Fragrâncias © 2025*")
+
