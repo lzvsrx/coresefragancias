@@ -1,5 +1,4 @@
-Chatbot de Estoque - COMPLETO SEM ERROS
-python
+
 import streamlit as st
 import os
 from datetime import datetime, date
@@ -271,3 +270,4 @@ if prompt := st.chat_input("Digite um comando (ex: 'adicionar produto', 'estoque
     # Rerun apenas em ações críticas
     if any(x in resposta.lower() for x in ["sucesso", "vendida", "adicionado"]):
         st.rerun()
+
