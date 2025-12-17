@@ -2,48 +2,53 @@ import streamlit as st
 import os
 from utils.database import add_user, get_user, get_all_users, hash_password, delete_user
 
+def load_css(file_name="style.css"):
+    if os.path.exists(file_name):
+        with open(file_name, encoding='utf-8') as f: 
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
 st.set_page_config(page_title="Administração")
+load_css()
 
-if os.path.exists("style.css"):
-    with open("style.css", encoding='utf-8') as f: st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-
-st.title("🔐 Área Administrativa")
+st.title("🔐 Administração")
 
 if "logged_in" not in st.session_state: st.session_state["logged_in"] = False
 
 if st.session_state["logged_in"]:
+    st.sidebar.success(f"Logado como {st.session_state['username']}")
     if st.sidebar.button("Logout"):
         st.session_state["logged_in"] = False
         st.rerun()
 
-menu = st.selectbox("Ação", ["Login", "Cadastrar", "Gerenciar Usuários"])
+menu = st.selectbox("Menu", ["Login", "Cadastrar Novo", "Gerenciar Contas"])
 
 if menu == "Login":
-    user = st.text_input("Usuário")
-    pw = st.text_input("Senha", type="password")
-    if st.button("Entrar"):
-        u = get_user(user)
-        if u and u['password'] == hash_password(pw):
+    u = st.text_input("Usuário")
+    p = st.text_input("Senha", type="password")
+    if st.button("Acessar"):
+        user = get_user(u)
+        if user and user['password'] == hash_password(p):
             st.session_state["logged_in"] = True
-            st.session_state["role"] = u['role']
-            st.success("Logado!")
+            st.session_state["username"] = u
+            st.session_state["role"] = user['role']
             st.rerun()
-        else: st.error("Erro!")
+        else: st.error("Dados inválidos.")
 
-elif menu == "Cadastrar":
-    new_u = st.text_input("Novo Usuário")
-    new_p = st.text_input("Senha", type="password")
-    role = st.selectbox("Role", ["staff", "admin"])
-    if st.button("Criar"):
-        add_user(new_u, new_p, role)
-        st.success("Criado!")
+elif menu == "Cadastrar Novo":
+    with st.form("cad"):
+        nu = st.text_input("Usuário")
+        np = st.text_input("Senha", type="password")
+        nr = st.selectbox("Role", ["staff", "admin"])
+        if st.form_submit_button("Criar"):
+            add_user(nu, np, nr)
+            st.success("Criado!")
 
-elif menu == "Gerenciar Usuários":
+elif menu == "Gerenciar Contas":
     if st.session_state.get("role") == "admin":
         for u in get_all_users():
-            col1, col2 = st.columns([3, 1])
-            col1.write(f"👤 {u['username']} ({u['role']})")
-            if col2.button("Excluir", key=u['username']):
+            c1, c2 = st.columns([3, 1])
+            c1.write(f"👤 {u['username']} ({u['role']})")
+            if u['username'] != "admin" and c2.button("Excluir", key=u['username']):
                 delete_user(u['username'])
                 st.rerun()
-    else: st.error("Acesso apenas para Admins")
+    else: st.error("Apenas administradores.")
