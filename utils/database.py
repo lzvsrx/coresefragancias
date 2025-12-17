@@ -58,6 +58,7 @@ def create_tables():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # ---------- TABELA PRODUTOS ----------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS produtos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,6 +75,7 @@ def create_tables():
     );
     """)
 
+    # ---------- TABELA USUÁRIOS ----------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,17 +85,20 @@ def create_tables():
     );
     """)
 
+    # Cria usuário admin padrão, se não existir
     try:
         cursor.execute(
             "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
             ("admin", hash_password("123"), "admin")
         )
     except sqlite3.IntegrityError:
+        # Já existe admin, então ignora
         pass
 
     conn.commit()
     conn.close()
 
+# Garante criação das tabelas ao importar o módulo
 create_tables()
 
 # ---------- PRODUTOS ----------
@@ -196,7 +201,10 @@ def mark_produto_as_sold(product_id: int, quantity_sold: int = 1):
 
 # ---------- USUÁRIOS ----------
 
-def add_user(username, password, role="staff"):
+def add_user(username, password, role="user"):
+    """
+    role pode ser: 'admin', 'staff' ou 'user' (usuário normal).
+    """
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -208,6 +216,8 @@ def add_user(username, password, role="staff"):
         conn.commit()
         return True
     except sqlite3.IntegrityError:
+        # username já existe
+        conn.rollback()
         return False
     finally:
         conn.close()
@@ -226,7 +236,9 @@ def get_all_users():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT username, role FROM users ORDER BY role DESC, username ASC")
+        cursor.execute(
+            "SELECT id, username, role FROM users ORDER BY role DESC, username ASC"
+        )
         return [dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()
@@ -237,6 +249,45 @@ def check_user_login(username, password):
         return user
     return None
 
+def update_user_role(user_id: int, new_role: str):
+    """
+    Atualiza o papel (role) de um usuário.
+    Ex.: 'admin', 'staff', 'user'.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        conn.execute("BEGIN")
+        cursor.execute(
+            "UPDATE users SET role = ? WHERE id = ?",
+            (new_role, user_id)
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def delete_user(user_id: int):
+    """
+    Remove um usuário do sistema.
+    Recomendado usar apenas em telas restritas a admins.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        conn.execute("BEGIN")
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
 # ---------- CSV / PDF ----------
 
 def export_produtos_to_csv_content():
@@ -245,7 +296,12 @@ def export_produtos_to_csv_content():
         return ""
     fieldnames = list(produtos[0].keys())
     buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=fieldnames, extrasaction="ignore", delimiter=";")
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=fieldnames,
+        extrasaction="ignore",
+        delimiter=";"
+    )
     writer.writeheader()
     writer.writerows(produtos)
     return buffer.getvalue()
@@ -265,7 +321,10 @@ def import_produtos_from_csv_buffer(file_buffer):
             preco = safe_float(row.get("preco", "0"))
             quantidade = safe_int(row.get("quantidade", "0"))
             cursor.execute("""
-                INSERT INTO produtos (nome, preco, quantidade, marca, estilo, tipo, foto, data_validade, vendido, data_ultima_venda)
+                INSERT INTO produtos (
+                    nome, preco, quantidade, marca, estilo, tipo,
+                    foto, data_validade, vendido, data_ultima_venda
+                )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 nome, preco, quantidade,
