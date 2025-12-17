@@ -1,24 +1,30 @@
 import streamlit as st
+from utils.database import get_all_produtos, ASSETS_DIR
+from datetime import datetime
 import os
-from utils.database import get_all_produtos
 
-def load_css(file_name="style.css"):
-    if os.path.exists(file_name):
-        with open(file_name, encoding='utf-8') as f: 
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+def format_to_brl(value):
+    try: return f"R$ {float(value):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    except: return "R$ 0,00"
 
-st.set_page_config(page_title="Vendas")
-load_css()
+st.title("💰 Histórico de Vendas / Esgotados")
 
-st.title("💰 Produtos Vendidos")
+# Pegamos todos e filtramos os que já foram marcados como vendidos pelo menos uma vez
+todos = get_all_produtos(include_out_of_stock=True)
+vendidos = [p for p in todos if p.get('vendido') == 1]
 
-vendidos = [p for p in get_all_produtos(include_sold=True) if p['quantidade'] <= 0 and p['vendido'] == 1]
-total_vendido = sum(p['preco'] for p in vendidos)
-
-if vendidos:
-    for p in vendidos:
-        st.success(f"**{p['nome']}** - Vendido por R$ {p['preco']:.2f}")
-    st.divider()
-    st.metric("Total Acumulado (Esgotados)", f"R$ {total_vendido:,.2f}")
+if not vendidos:
+    st.info("Nenhuma venda registrada ainda.")
 else:
-    st.info("Sem vendas registradas.")
+    total_vendas = 0.0
+    for p in vendidos:
+        # Se a quantidade for 0, ele aparece aqui como "Esgotado"
+        # Se a quantidade for > 0, ele aparece aqui como "Item com vendas parciais"
+        status = "🔴 ESGOTADO" if p['quantidade'] == 0 else "🟡 EM ESTOQUE (Venda Parcial)"
+        
+        with st.expander(f"{p['nome']} - {status}"):
+            st.write(f"**Última Venda:** {p['data_ultima_venda']}")
+            st.write(f"**Preço unitário na venda:** {format_to_brl(p['preco'])}")
+            if p['foto']:
+                path = os.path.join(ASSETS_DIR, p['foto'])
+                if os.path.exists(path): st.image(path, width=100)
