@@ -1,23 +1,24 @@
 import streamlit as st
-from utils.database import get_all_produtos, update_produto, MARCAS, ESTILOS, TIPOS
+from utils.database import get_all_produtos, update_produto
 
-st.title("🔄 Recuperação e Reposição")
-st.info("Aqui você encontra itens que saíram do estoque (qtd 0) e pode trazê-los de volta.")
+st.title("🔄 Recuperação de Itens Sumidos")
+st.markdown("Itens com quantidade 0 que saíram do estoque principal aparecem aqui para reposição.")
 
-# Puxa tudo e filtra apenas o que "sumiu" da visão de vendas
-itens_zerados = [p for p in get_all_produtos(include_sold=True) if p['quantidade'] <= 0]
+# Busca direta no banco por itens zerados
+itens_sumidos = [p for p in get_all_produtos(include_sold=True) if p['quantidade'] <= 0]
 
-if not itens_zerados:
-    st.success("Não há produtos zerados para recuperar!")
+if not itens_sumidos:
+    st.success("Não há produtos para recuperar (estoque está positivo em tudo).")
 else:
-    for p in itens_zerados:
-        with st.expander(f"Repor: {p['nome']} (ID: {p['id']})"):
-            with st.form(f"form_{p['id']}"):
-                col1, col2 = st.columns(2)
-                nova_qtd = col1.number_input("Nova Quantidade", min_value=1, value=1)
-                novo_preco = col2.number_input("Preço Atual (R$)", value=float(p['preco']))
+    for p in itens_sumidos:
+        with st.expander(f"Recuperar: {p['nome']} (ID {p['id']})"):
+            st.warning(f"Dados atuais: Marca {p['marca']} | Preço anterior {p['preco']}")
+            with st.form(f"f_rec_{p['id']}"):
+                c1, c2 = st.columns(2)
+                nova_qtd = c1.number_input("Quantidade para Repor", min_value=1, value=10)
+                novo_preco = c2.number_input("Ajustar Preço (R$)", value=float(p['preco']))
                 
-                if st.form_submit_button("Confirmar Reposição"):
+                if st.form_submit_button("Confirmar Reposição e Salvar no Banco"):
                     update_produto(p['id'], p['nome'], novo_preco, nova_qtd, p['marca'], p['estilo'], p['tipo'], p['foto'], p['data_validade'])
-                    st.success("Produto reativado com sucesso!")
+                    st.success(f"O item '{p['nome']}' foi devolvido ao estoque!")
                     st.rerun()
