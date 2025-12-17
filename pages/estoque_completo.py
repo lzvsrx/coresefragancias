@@ -1,40 +1,36 @@
 import streamlit as st
-from datetime import datetime
-import os
+from utils.database import *
 
-# IMPORT SEGURA
-try:
-    from utils.database import get_all_produtos, ASSETS_DIR, MARCAS, ESTILOS, TIPOS
-except:
-    st.error("❌ Erro no database.py")
-    st.stop()
+st.set_page_config(page_title="Estoque", page_icon="📦", layout="wide")
 
-# 🔧 FUNÇÕES SEGURAS (ANTES de serem usadas!)
-def safe_int(value, default=0):
-    """Converte para int com fallback."""
-    try: return int(value)
-    except: return default
+def safe_int(v, d=0): return int(v) if v else d
+def safe_float(v, d=0.0): return float(v) if v else d
+def format_to_brl(v):
+    try: return f"R$ {safe_float(v):_.2f}".replace('.', 'X').replace('_', '.').replace('X', ',')
+    except: return "R$ 0,00"
 
-def safe_float(value, default=0.0):
-    """Converte para float com fallback."""
-    try: return float(value)
-    except: return default
+load_css()
+st.title("📦 Estoque Completo")
 
-def format_to_brl(value):
-    """Formato BRL seguro."""
-    try:
-        num = safe_float(value)
-        formatted = f"{num:_.2f}".replace('.', 'X').replace('_', '.').replace('X', ',')
-        return f"R$ {formatted}"
-    except: return "R$ N/A"
+produtos = get_all_produtos(include_sold=True)
+if not produtos: st.info("Nenhum produto"); st.stop()
 
-def format_date(date_str):
-    """Formata data ISO para BR."""
-    if not date_str: return 'N/A'
-    try: return datetime.fromisoformat(date_str).strftime('%d/%m/%Y')
-    except: return str(date_str)[:10]
+# FILTROS
+col1, col2, col3 = st.columns(3)
+marca_f = col1.selectbox("Marca", ["Todas"] + MARCAS)
+tipo_f = col2.selectbox("Tipo", ["Todos"] + TIPOS)
+qtd_min = col3.number_input("Qtd mínima", 0)
 
-# Configuração (PRIMEIRO!)
-st.set_page_config(page_title="Estoque - Cores e Fragrâncias", page_icon="📦", layout="wide")
+produtos = [p for p in produtos 
+           if (not marca_f or marca_f == p.get('marca')) 
+           and safe_int(p.get('quantidade')) >= qtd_min]
 
-# ... resto do seu código com safe_int/safe_float funcionando ...
+col1, col2 = st.columns(2)
+col1.metric("Total itens", len(produtos))
+total_valor = sum(safe_float(p['preco']) * safe_int(p['quantidade']) for p in produtos)
+col2.metric("Valor total", format_to_brl(total_valor))
+
+for p in produtos:
+    with st.container(border=True):
+        st.write(f"**{p['nome']}** - {p.get('marca', 'N/A')}")
+        st.caption(f"R${p['preco']} | Qtd: {p['quantidade']}")
