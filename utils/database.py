@@ -31,7 +31,13 @@ if not os.path.exists(DATABASE_DIR):
     os.makedirs(DATABASE_DIR)
 if not os.path.exists(ASSETS_DIR):
     os.makedirs(ASSETS_DIR)
-
+__all__ = [
+    'get_db_connection', 'hash_password', 'create_tables', 'add_produto', 'get_all_produtos',
+    'get_produtos_vendidos', 'get_produto_by_id', 'update_produto', 'delete_produto',
+    'mark_produto_as_sold', 'add_user', 'get_user', 'get_all_users', 'check_user_login',
+    'export_produtos_to_csv_content', 'import_produtos_from_csv_buffer', 'generate_stock_pdf_bytes',
+    'MARCAS', 'ESTILOS', 'TIPOS', 'ASSETS_DIR', 'DATABASE'
+]
 # Listas de categorias
 MARCAS = [
     "Eudora", "O Boticário", "Jequiti", "Avon", "Mary Kay", "Natura",
