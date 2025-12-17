@@ -1,16 +1,15 @@
 import streamlit as st
-from utils.database import get_all_produtos, ASSETS_DIR
 from datetime import datetime
 import os
+from utils.database import get_all_produtos
 
+# Exemplo de uso correto agora:
+todos = get_all_produtos(include_out_of_stock=True)
 def format_to_brl(value):
     try: return f"R$ {float(value):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
     except: return "R$ 0,00"
 
 st.title("💰 Histórico de Vendas / Esgotados")
-
-# Pegamos todos e filtramos os que já foram marcados como vendidos pelo menos uma vez
-todos = get_all_produtos(include_out_of_stock=True)
 vendidos = [p for p in todos if p.get('vendido') == 1]
 
 if not vendidos:
@@ -28,3 +27,4 @@ else:
             if p['foto']:
                 path = os.path.join(ASSETS_DIR, p['foto'])
                 if os.path.exists(path): st.image(path, width=100)
+
