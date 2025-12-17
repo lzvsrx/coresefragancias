@@ -1,3 +1,5 @@
+# utils/database.py
+
 import sqlite3
 import os
 import hashlib
@@ -8,15 +10,15 @@ from reportlab.lib.units import cm
 from datetime import datetime
 import io
 
+# Diretórios
 DATABASE_DIR = "data"
 DATABASE = os.path.join(DATABASE_DIR, "estoque.db")
 ASSETS_DIR = "assets"
 
-if not os.path.exists(DATABASE_DIR):
-    os.makedirs(DATABASE_DIR)
-if not os.path.exists(ASSETS_DIR):
-    os.makedirs(ASSETS_DIR)
+os.makedirs(DATABASE_DIR, exist_ok=True)
+os.makedirs(ASSETS_DIR, exist_ok=True)
 
+# Listas básicas (você pode expandir)
 MARCAS = [
     "Eudora", "O Boticário", "Jequiti", "Avon", "Mary Kay",
     "Natura", "Pierre Alexander", "Tupperware", "Outra"
@@ -94,7 +96,7 @@ def create_tables():
 
 create_tables()
 
-# ------------ CRUD PRODUTOS ------------
+# ---------- PRODUTOS ----------
 
 def add_produto(nome, preco, quantidade, marca, estilo, tipo, foto=None, data_validade=None):
     conn = get_db_connection()
@@ -192,7 +194,7 @@ def mark_produto_as_sold(product_id: int, quantity_sold: int = 1):
     finally:
         conn.close()
 
-# ------------ USUÁRIOS ------------
+# ---------- USUÁRIOS ----------
 
 def add_user(username, password, role="staff"):
     conn = get_db_connection()
@@ -235,7 +237,7 @@ def check_user_login(username, password):
         return user
     return None
 
-# ------------ EXPORTAÇÃO / IMPORTAÇÃO ------------
+# ---------- CSV / PDF ----------
 
 def export_produtos_to_csv_content():
     produtos = get_all_produtos()
