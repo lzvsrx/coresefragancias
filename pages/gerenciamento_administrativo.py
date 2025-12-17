@@ -21,3 +21,4 @@ else:
     if st.session_state.role == 'admin':
         st.subheader("Novos Usuários")
         # Formulário de add_user simplificado aqui
+
