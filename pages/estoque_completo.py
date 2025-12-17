@@ -22,27 +22,31 @@ produtos = get_all_produtos(include_sold=True)
 if not produtos:
     st.info("Nenhum produto cadastrado.")
 else:
+    # Filtros
     marcas = sorted(list({p.get("marca") for p in produtos if p.get("marca")}))
-    f_marca = st.sidebar.selectbox("Filtrar Marca", ["Todas"] + marcas)
-
+    f_marca = st.selectbox("Filtrar por Marca", ["Todas"] + marcas)
+    
     filtrados = [p for p in produtos if (f_marca == "Todas" or p['marca'] == f_marca)]
 
-    total_estoque = 0.0
+    total_estoque_financeiro = 0.0
+
     for p in filtrados:
-        qtd = p['quantidade']
-        total_item = qtd * p['preco']
-        total_estoque += total_item
+        qtd = int(p['quantidade'])
+        preco = float(p['preco'])
+        subtotal = qtd * preco
+        total_estoque_financeiro += subtotal
         
         with st.container():
-            col1, col2 = st.columns([1, 4])
+            col1, col2, col3 = st.columns([1, 3, 1])
             with col1:
                 path = os.path.join(ASSETS_DIR, p['foto']) if p['foto'] else ""
-                if path and os.path.exists(path): st.image(path, width=120)
+                if path and os.path.exists(path): st.image(path, width=100)
             with col2:
                 st.subheader(p['nome'])
                 st.write(f"**Marca:** {p['marca']} | **Qtd:** {qtd}")
-                st.write(f"**Preço:** {format_to_brl(p['preco'])}")
-                if qtd <= 0: st.error("PRODUTO ESGOTADO - VEJA NA PÁGINA DE RECUPERAÇÃO")
+                st.write(f"**Preço Unit.:** {format_to_brl(preco)}")
+            with col3:
+                st.metric("Subtotal", format_to_brl(subtotal))
         st.divider()
 
-    st.sidebar.metric("Valor Total", format_to_brl(total_estoque))
+    st.success(f"💰 **VALOR TOTAL EM ESTOQUE (FILTRADO): {format_to_brl(total_estoque_financeiro)}**")
