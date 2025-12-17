@@ -2,56 +2,39 @@ import streamlit as st
 from utils.database import get_all_produtos, ASSETS_DIR
 import os
 
-st.set_page_config(page_title="Estoque Completo", layout="wide")
-
 def format_to_brl(value):
     try:
         return f"R$ {float(value):_.2f}".replace('.', ',').replace('_', '.')
-    except: return "R$ 0,00"
+    except: return "R$ N/A"
 
-st.title("📦 Controle de Estoque")
+st.title("📦 Estoque Completo")
 
-# 🔄 Pega TUDO (incluindo os que "sumiram" por estar com qtd 0)
+# CHAMADA: include_sold=True para garantir que nada suma
 produtos = get_all_produtos(include_sold=True)
 
 if not produtos:
-    st.info("Nenhum produto no sistema.")
+    st.info("Nenhum produto cadastrado.")
 else:
-    # Filtros
-    col1, col2, col3 = st.columns(3)
-    marcas = sorted(list({p['marca'] for p in produtos if p['marca']}))
-    with col1:
-        f_marca = st.selectbox("Marca", ["Todas"] + marcas)
-    
-    # Aplicação do Filtro
-    filtrados = [p for p in produtos if (f_marca == "Todas" or p['marca'] == f_marca)]
+    # Filtros baseados na sua estrutura
+    marcas = sorted(list({p.get("marca") for p in produtos if p.get("marca")}))
+    marca_filtro = st.selectbox("Filtrar por Marca", ["Todas"] + marcas)
 
-    st.write(f"Exibindo {len(filtrados)} produtos.")
+    produtos_filtrados = produtos
+    if marca_filtro != "Todas":
+        produtos_filtrados = [p for p in produtos if p.get("marca") == marca_filtro]
 
-    for p in filtrados:
+    for p in produtos_filtrados:
         with st.container():
-            c1, c2, c3 = st.columns([1, 3, 1])
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                if p.get("foto") and os.path.exists(os.path.join(ASSETS_DIR, p.get("foto"))):
+                    st.image(os.path.join(ASSETS_DIR, p.get("foto")), width=120)
+                else: st.write("📷 S/ Foto")
             
-            with c1:
-                path = os.path.join(ASSETS_DIR, p['foto']) if p['foto'] else ""
-                if path and os.path.exists(path):
-                    st.image(path, width=120)
-                else:
-                    st.write("🖼️ Sem Foto")
-            
-            with c2:
-                st.subheader(p['nome'])
-                st.write(f"**Preço:** {format_to_brl(p['preco'])} | **Validade:** {p['data_validade']}")
-                
-                # Alerta visual para produtos zerados
-                if p['quantidade'] <= 0:
-                    st.error(f"⚠️ ESTOQUE ZERADO (Vendido)")
-                else:
-                    st.success(f"✅ Disponível: {p['quantidade']} unidades")
-            
-            with c3:
-                # Botão para "Recuperar" ou Editar rapidamente
-                if st.button("📝 Editar/Repor", key=f"ed_{p['id']}"):
-                    st.session_state['editar_id'] = p['id']
-                    st.info("Vá para a página de Cadastro/Edição para alterar.")
+            with col2:
+                st.subheader(p.get("nome"))
+                qtd = p.get("quantidade", 0)
+                status = "✅ Em Estoque" if qtd > 0 else "❌ Esgotado / Vendido"
+                st.write(f"**{status}** | Quantidade: {qtd}")
+                st.write(f"**Preço:** {format_to_brl(p.get('preco'))}")
         st.divider()
