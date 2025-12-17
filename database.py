@@ -9,6 +9,7 @@ DATABASE_DIR = "data"
 DATABASE = os.path.join(DATABASE_DIR, "estoque.db")
 ASSETS_DIR = "assets"
 
+# Garante diretórios
 os.makedirs(DATABASE_DIR, exist_ok=True)
 os.makedirs(ASSETS_DIR, exist_ok=True)
 
@@ -56,12 +57,12 @@ def create_tables():
 
 create_tables()
 
-# --- FUNÇÕES DE BUSCA (A chave para não sumir) ---
+# --- FUNÇÕES CORE ---
 
 def get_all_produtos(include_sold=True):
     """
-    Se include_sold=True: Traz TUDO (Ativos e Zerados).
-    Se include_sold=False: Traz apenas o que tem no estoque (Qtd > 0).
+    include_sold=True: Retorna TUDO (inclusive o que 'sumiu' por estar zerado).
+    include_sold=False: Retorna apenas o que tem estoque ativo.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -69,13 +70,12 @@ def get_all_produtos(include_sold=True):
         cursor.execute("SELECT * FROM produtos ORDER BY nome ASC")
     else:
         cursor.execute("SELECT * FROM produtos WHERE quantidade > 0 ORDER BY nome ASC")
-    
     produtos = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return produtos
 
 def update_produto(product_id, nome, preco, quantidade, marca, estilo, tipo, foto, data_validade):
-    """Atualiza os dados. Se a quantidade voltar a ser > 0, ele 'ressuscita' no estoque."""
+    """Atualiza o produto garantindo que ele não seja excluído."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -87,25 +87,18 @@ def update_produto(product_id, nome, preco, quantidade, marca, estilo, tipo, fot
     conn.close()
 
 def mark_produto_as_sold(product_id, quantity_sold=1):
-    """Diminui o estoque. Se chegar a 0, marca como vendido mas NÃO apaga."""
+    """Dá baixa no estoque sem deletar o produto."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT quantidade FROM produtos WHERE id = ?", (product_id,))
-    prod = cursor.fetchone()
-    
-    if prod and prod['quantidade'] >= quantity_sold:
-        nova_qtd = prod['quantidade'] - quantity_sold
+    res = cursor.fetchone()
+    if res and res['quantidade'] >= quantity_sold:
+        nova_qtd = res['quantidade'] - quantity_sold
+        # Se nova_qtd for 0, marcamos como vendido=1
         cursor.execute("""
             UPDATE produtos 
             SET quantidade = ?, vendido = ?, data_ultima_venda = ? 
             WHERE id = ?
         """, (nova_qtd, 1 if nova_qtd == 0 else 0, datetime.now().isoformat(), product_id))
         conn.commit()
-    conn.close()
-
-def delete_produto(product_id):
-    """Remoção física (Cuidado!)."""
-    conn = get_db_connection()
-    conn.execute("DELETE FROM produtos WHERE id = ?", (product_id,))
-    conn.commit()
     conn.close()
