@@ -1,7 +1,9 @@
 import streamlit as st
-from utils.database import get_all_produtos, ASSETS_DIR
 import os
+from utils.database import get_all_produtos
 
+# Exemplo de uso correto agora:
+produtos = get_all_produtos(include_out_of_stock=True)
 def format_to_brl(value):
     try:
         return f"R$ {float(value):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
@@ -10,8 +12,6 @@ def format_to_brl(value):
 st.set_page_config(page_title="Estoque Ativo")
 st.title("📦 Estoque Disponível")
 
-# Buscamos apenas produtos que possuem quantidade > 0 para não misturar com os vendidos
-produtos = get_all_produtos(include_out_of_stock=False)
 
 if not produtos:
     st.info("Não há produtos disponíveis no estoque no momento.")
@@ -42,3 +42,4 @@ else:
             st.divider()
 
     st.success(f"💰 Valor Total em Estoque: {format_to_brl(total_valor)}")
+
