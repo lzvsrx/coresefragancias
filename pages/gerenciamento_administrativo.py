@@ -10,7 +10,7 @@ from utils.database import (
     get_all_users,
     hash_password,
     update_user_role,
-    delete_user
+    delete_user,
 )
 
 # Configuração da página
@@ -208,3 +208,4 @@ elif option == "Gerenciar Contas (Admins)":
                         st.error("❌ Erro ao salvar.")
         
         st.info("💡 **Dica:** Use '🔄 Role' para alternar rapidamente entre Admin/Usuário Normal")
+
