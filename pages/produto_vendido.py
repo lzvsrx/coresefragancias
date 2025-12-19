@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from utils.database import get_all_produtos, ASSETS_DIR, safe_int, safe_float
 
-st.set_page_config(page_title="Produtos Esgotados", page_icon="💰", layout="wide")
+st.set_page_config(page_title="Produtos Vendidos", page_icon="💰", layout="wide")
 
 def format_to_brl(value):
     try:
@@ -15,46 +15,47 @@ def format_to_brl(value):
 
 def load_css(file_name="style.css"):
     if os.path.exists(file_name):
-        try:
-            with open(file_name, encoding="utf-8") as f:
-                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-        except Exception:
-            pass
+        with open(file_name, encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 load_css("style.css")
 
-st.title("💰 Histórico de Itens Esgotados")
+st.title("💰 Histórico de Produtos Vendidos")
 st.markdown("---")
-st.info("Produtos com quantidade igual a zero (esgotados).")
+st.info("Lista de produtos que já tiveram pelo menos uma venda registrada.")
 
 todos = get_all_produtos(include_sold=True)
-esgotados = [p for p in todos if safe_int(p.get("quantidade", 0)) == 0]
 
-if not esgotados:
-    st.success("Nenhum produto esgotado no momento.")
+# 👉 PRODUTOS QUE JÁ FORAM VENDIDOS
+vendidos = [p for p in todos if p.get("data_ultima_venda")]
+
+if not vendidos:
+    st.success("Nenhum produto vendido até o momento.")
     st.stop()
 
-total_valor = 0.0
-for p in esgotados:
-    total_valor += safe_float(p.get("preco", 0))
+total_valor = sum(safe_float(p.get("preco", 0)) for p in vendidos)
 
 col1, col2 = st.columns(2)
 with col1:
-    st.metric("Itens esgotados", len(esgotados))
+    st.metric("Produtos vendidos", len(vendidos))
 with col2:
     st.metric("Somatório de preços", format_to_brl(total_valor))
 
 st.markdown("---")
 
-for p in esgotados:
+for p in vendidos:
     with st.container(border=True):
         col_info, col_img = st.columns([3, 1])
+
         with col_info:
             st.markdown(f"**{p.get('nome', 'N/A')}**")
-            st.write(f"Preço unitário: {format_to_brl(p.get('preco', 0))}")
-            st.caption(f"Marca: {p.get('marca', 'N/A')} • Tipo: {p.get('tipo', 'N/A')}")
-            if p.get("data_ultima_venda"):
-                st.caption(f"Última venda: {p['data_ultima_venda']}")
+            st.write(f"Preço: {format_to_brl(p.get('preco', 0))}")
+            st.write(f"Quantidade atual: {safe_int(p.get('quantidade', 0))}")
+            st.caption(
+                f"Marca: {p.get('marca', 'N/A')} • Tipo: {p.get('tipo', 'N/A')}"
+            )
+            st.caption(f"Última venda: {p.get('data_ultima_venda')}")
+
         with col_img:
             foto = p.get("foto")
             if foto:
